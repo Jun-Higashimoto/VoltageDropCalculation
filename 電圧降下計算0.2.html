@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>電線の電圧降下計算</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        margin: 0;
+        padding: 20px;
+        background-color: #f4f4f4;
+        color: #333;
+      }
+      .container {
+        max-width: 600px;
+        margin: auto;
+        padding: 20px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        text-align: center;
+        color: #4caf50;
+        font-size: 24px;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      input[type="number"],
+      select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+        font-size: 16px;
+      }
+      button {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        background: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 18px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+      }
+      button:hover {
+        background: #45a049;
+      }
+      #result {
+        margin-top: 20px;
+        padding: 15px;
+        background: #e9e9e9;
+        border-radius: 4px;
+        font-size: 20px;
+        text-align: center;
+        font-weight: bold;
+        word-wrap: break-word;
+      }
+      #formula {
+        margin-top: 10px;
+        font-size: 16px;
+        text-align: center;
+        background: #e9e9e9;
+        padding: 10px;
+        border-radius: 4px;
+      }
+      /* スマートフォン向けスタイル */
+      @media (max-width: 600px) {
+        body {
+          padding: 10px;
+        }
+        .container {
+          padding: 15px;
+        }
+        h1 {
+          font-size: 20px;
+        }
+        input[type="number"],
+        select,
+        button {
+          font-size: 14px;
+        }
+        #result {
+          font-size: 18px;
+        }
+        #formula {
+          font-size: 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>電線の電圧降下計算</h1>
+
+      <div class="form-group">
+        <label for="wiring_system">電気方式:</label>
+        <select id="wiring_system">
+          <option value="dc_single_phase">直流および単相2線式</option>
+          <option value="three_phase_three_wire">三相3線式</option>
+          <option value="dc_three_phase_four_wire">
+            直流3線式、単相3線式、三相4線式
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="length">電線の長さ L (m):</label>
+        <input
+          type="number"
+          id="length"
+          placeholder="例: 100"
+          step="any"
+          inputmode="decimal"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="current">電流 I (A):</label>
+        <input
+          type="number"
+          id="current"
+          placeholder="例: 20"
+          step="any"
+          inputmode="decimal"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="cross_section">電線の呼び径:</label>
+        <select id="cross_section">
+          <option value="2.0106193">1.6mm</option>
+          <option value="3.14159265">2.0mm</option>
+          <option value="5.30929158">2.6mm</option>
+          <option value="1.97920337">2sq</option>
+          <option value="3.51858377">3.5sq</option>
+          <option value="5.49778714">5.5sq</option>
+          <option value="8">8sq</option>
+          <option value="14">14sq</option>
+          <option value="22">22sq</option>
+          <option value="38">38sq</option>
+          <option value="60">60sq</option>
+          <option value="100">100sq</option>
+          <option value="150">150sq</option>
+          <option value="200">200sq</option>
+          <option value="250">250sq</option>
+          <option value="325">325sq</option>
+        </select>
+      </div>
+
+      <button>計算</button>
+
+      <div id="result">ここに電圧降下eが表示されます。</div>
+
+      <div id="formula">計算式:</div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const calculateButton = document.querySelector("button");
+        const wiringSystem = document.getElementById("wiring_system");
+        const lengthInput = document.getElementById("length");
+        const currentInput = document.getElementById("current");
+        const crossSection = document.getElementById("cross_section");
+        const resultElement = document.getElementById("result");
+        const formulaElement = document.getElementById("formula");
+
+        // 各計算式のテンプレートを定義
+        const formulas = {
+          dc_single_phase: "e = 35.6 * L * I / (1000 * S)",
+          three_phase_three_wire: "e = 30.8 * L * I / (1000 * S)",
+          dc_three_phase_four_wire: "e = 17.8 * L * I / (1000 * S)",
+        };
+
+        function calculateVoltageDrop() {
+          const length = parseFloat(lengthInput.value);
+          const current = parseFloat(currentInput.value);
+          const selectedCrossSection = parseFloat(crossSection.value);
+          const selectedWiringSystem = wiringSystem.value;
+
+          // 選択された計算式を表示
+          formulaElement.textContent = `計算式: ${formulas[selectedWiringSystem]}`;
+
+          // 入力値が数値かどうかをチェック
+          if (isNaN(length) || isNaN(current) || isNaN(selectedCrossSection)) {
+            resultElement.textContent =
+              "すべての項目に数値を入力してください。";
+            return;
+          }
+
+          let e;
+          let coefficient;
+
+          if (selectedWiringSystem === "dc_single_phase") {
+            coefficient = 35.6;
+          } else if (selectedWiringSystem === "three_phase_three_wire") {
+            coefficient = 30.8;
+          } else if (selectedWiringSystem === "dc_three_phase_four_wire") {
+            coefficient = 17.8;
+          }
+
+          // 正しい計算式を適用
+          e = (coefficient * length * current) / (1000 * selectedCrossSection);
+
+          resultElement.textContent = `電圧降下 e = ${e.toFixed(2)} V`;
+        }
+
+        // 各入力フィールドとプルダウンメニューに変更があったときに再計算する
+        wiringSystem.addEventListener("change", calculateVoltageDrop);
+        lengthInput.addEventListener("input", calculateVoltageDrop);
+        currentInput.addEventListener("input", calculateVoltageDrop);
+        crossSection.addEventListener("change", calculateVoltageDrop);
+
+        // ボタンクリック時にも計算を実行する
+        calculateButton.addEventListener("click", calculateVoltageDrop);
+
+        // 初回表示時にも計算を実行する
+        calculateVoltageDrop();
+      });
+    </script>
+  </body>
+</html>
